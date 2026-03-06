@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="1">
+
+    <!-- ── Metadatos ── -->
+    <title>PacheVideo</title>
+    <organization>com.pachevideo</organization>
+    <domains enable_localSystem="true"/>
+
+    <!-- ── Recursos visuales del wizard ── -->
+    <background
+        file="background.png"
+        alignment="topleft"
+        scaling="tofit"
+        mime-type="image/png"/>
+
+    <welcome
+        file="welcome.html"
+        mime-type="text/html"/>
+
+    <conclusion
+        file="conclusion.html"
+        mime-type="text/html"/>
+
+    <!-- ── Opciones del instalador ── -->
+    <options
+        customize="never"
+        require-scripts="false"
+        rootVolumeOnly="true"
+        hostArchitectures="x86_64,arm64"/>
+
+    <!-- ── Requisitos mínimos del sistema ── -->
+    <volume-check>
+        <allowed-os-versions>
+            <os-version min="10.14"/>
+        </allowed-os-versions>
+    </volume-check>
+
+    <!-- ── Definición del paquete ── -->
+    <pkg-ref id="com.pachevideo.app"/>
+
+    <choices-outline>
+        <line choice="default">
+            <line choice="com.pachevideo.app"/>
+        </line>
+    </choices-outline>
+
+    <choice id="default"/>
+    <choice id="com.pachevideo.app" visible="false">
+        <pkg-ref id="com.pachevideo.app"/>
+    </choice>
+
+    <pkg-ref
+        id="com.pachevideo.app"
+        version="1.0.0"
+        onConclusion="none">component_PacheVideo.pkg</pkg-ref>
+
+</installer-gui-script>
