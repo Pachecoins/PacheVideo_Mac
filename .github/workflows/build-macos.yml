@@ -1,0 +1,96 @@
+name: Build PacheVideo macOS
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:   # también se puede disparar manualmente desde GitHub
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+
+      # ── 1. Checkout del repo ──────────────────────────────
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      # ── 2. Python 3.11 ───────────────────────────────────
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # ── 3. Instalar dependencias ──────────────────────────
+      - name: Instalar dependencias Python
+        run: pip install -r requirements.txt
+
+      # ── 4. Descargar ffmpeg ───────────────────────────────
+      - name: Descargar ffmpeg
+        run: |
+          python3 -c "import ffmpeg_downloader as ffd; ffd.download()" || true
+          FFMPEG=$(python3 -c "import ffmpeg_downloader as ffd; print(ffd.ffmpeg_path)" 2>/dev/null || echo "")
+          if [ -z "$FFMPEG" ] || [ ! -f "$FFMPEG" ]; then
+            brew install ffmpeg
+            FFMPEG=$(which ffmpeg)
+          fi
+          echo "FFMPEG_PATH=$FFMPEG" >> $GITHUB_ENV
+          cp -f "$FFMPEG" ./ffmpeg
+          chmod +x ./ffmpeg
+
+      # ── 5. Construir PacheVideo.app con PyInstaller ───────
+      - name: Construir PacheVideo.app
+        run: |
+          pyinstaller \
+            --onefile \
+            --windowed \
+            --name "PacheVideo" \
+            --add-binary "ffmpeg:." \
+            --hidden-import customtkinter \
+            --hidden-import yt_dlp \
+            --hidden-import PIL \
+            --collect-all customtkinter \
+            --osx-bundle-identifier "com.pachevideo.app" \
+            pache_video.py
+          rm -f ./ffmpeg
+          rm -rf build PacheVideo.spec
+
+      # ── 6. Crear paquete componente (.pkg parcial) ────────
+      - name: Crear componente .pkg
+        run: |
+          mkdir -p installer_output
+          pkgbuild \
+            --root dist \
+            --identifier com.pachevideo.app \
+            --version 1.0.0 \
+            --install-location /Applications \
+            --scripts pkg_resources/scripts \
+            installer_output/component_PacheVideo.pkg
+
+      # ── 7. Crear instalador final con wizard ──────────────
+      - name: Crear instalador .pkg con wizard
+        run: |
+          productbuild \
+            --distribution pkg_resources/distribution.xml \
+            --resources pkg_resources \
+            --package-path installer_output \
+            installer_output/PacheVideo_v1.0.0.pkg
+          rm -f installer_output/component_PacheVideo.pkg
+
+      # ── 8. Subir .pkg como artefacto descargable ──────────
+      - name: Subir instalador como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: PacheVideo-macOS-Installer
+          path: installer_output/PacheVideo_v1.0.0.pkg
+          retention-days: 30
+
+      # ── 9. (Opcional) Crear GitHub Release automático ─────
+      # Descomentá este bloque si querés que cada push a main
+      # genere una Release descargable públicamente:
+      #
+      # - name: Crear GitHub Release
+      #   uses: softprops/action-gh-release@v2
+      #   if: startsWith(github.ref, 'refs/tags/')
+      #   with:
+      #     files: installer_output/PacheVideo_v1.0.0.pkg
