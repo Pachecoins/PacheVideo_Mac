@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background: #080808;
+    color: #EAEAEA;
+    padding: 28px 32px;
+    height: 100%;
+  }
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .logo-p {
+    font-size: 42px;
+    font-weight: 900;
+    color: #A020F0;
+    line-height: 1;
+  }
+  .logo-name {
+    font-size: 28px;
+    font-weight: 700;
+    color: #EAEAEA;
+  }
+  .logo-badge {
+    font-size: 13px;
+    color: #D4AF37;
+    margin-top: 2px;
+  }
+  .divider {
+    height: 1px;
+    background: linear-gradient(to right, #A020F0, #D4AF37, transparent);
+    margin-bottom: 22px;
+  }
+  h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #D4AF37;
+    margin-bottom: 10px;
+  }
+  p {
+    font-size: 13px;
+    color: #888888;
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+  .feature-list {
+    list-style: none;
+    margin-bottom: 20px;
+  }
+  .feature-list li {
+    font-size: 13px;
+    color: #EAEAEA;
+    padding: 5px 0;
+    border-bottom: 1px solid #1A1A1A;
+  }
+  .feature-list li::before {
+    content: "▸  ";
+    color: #A020F0;
+    font-weight: bold;
+  }
+  .note {
+    font-size: 11px;
+    color: #555555;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+  <div class="logo-row">
+    <div class="logo-p">P</div>
+    <div>
+      <div class="logo-name">PacheVideo</div>
+      <div class="logo-badge">▸ Premium  ·  v1.0.0</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>Bienvenido al instalador de PacheVideo</h2>
+  <p>
+    Estás a punto de instalar <strong style="color:#EAEAEA">PacheVideo</strong>,
+    una suite profesional de descarga de videos y audio de YouTube con
+    la mejor calidad disponible, directo a tu equipo.
+  </p>
+
+  <ul class="feature-list">
+    <li>Descarga videos en MP4 — hasta 4K</li>
+    <li>Extrae audio en MP3 — hasta 320 kbps</li>
+    <li>Historial de descargas con thumbnails</li>
+    <li>Selección de calidad de video y audio</li>
+    <li>Interfaz dark premium — Cyber-Luxury</li>
+  </ul>
+
+  <p>
+    Hacé clic en <strong style="color:#EAEAEA">Continuar</strong> para comenzar
+    la instalación.
+  </p>
+
+  <p class="note">
+    PacheVideo se instalará en tu carpeta /Applications.<br/>
+    Se requiere macOS 10.14 (Mojave) o superior.
+  </p>
+</body>
+</html>
