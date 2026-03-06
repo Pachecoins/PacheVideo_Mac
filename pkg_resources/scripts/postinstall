@@ -1,0 +1,20 @@
+#!/bin/bash
+# ── Postinstall script de PacheVideo ──────────────────────
+# Se ejecuta automáticamente al terminar la instalación del .pkg
+
+APP="/Applications/PacheVideo.app"
+
+# Quitar el atributo de cuarentena de Gatekeeper
+# (evita el diálogo "no se puede abrir porque es de un desarrollador no identificado"
+#  en la primera apertura sin firma de Developer ID)
+if [ -d "$APP" ]; then
+    xattr -cr "$APP" 2>/dev/null || true
+fi
+
+# Asegurar permisos de ejecución en el binario
+BINARY="$APP/Contents/MacOS/PacheVideo"
+if [ -f "$BINARY" ]; then
+    chmod +x "$BINARY"
+fi
+
+exit 0
