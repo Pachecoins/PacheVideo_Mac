@@ -1,0 +1,85 @@
+══════════════════════════════════════════════════════════════
+  PacheVideo — Guía de Build para macOS
+══════════════════════════════════════════════════════════════
+
+REQUISITOS PREVIOS
+──────────────────
+1. Python 3.10+
+   → https://www.python.org/downloads/macos/
+   → O con Homebrew: brew install python
+
+2. Xcode Command Line Tools (para pkgbuild y productbuild)
+   → xcode-select --install
+
+3. (Opcional) Homebrew para ffmpeg de respaldo
+   → /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   → brew install ffmpeg
+
+PASOS PARA GENERAR EL INSTALADOR
+──────────────────────────────────
+Abrí Terminal, navegá a esta carpeta y ejecutá:
+
+  Paso 1 — Construir la app:
+    bash build.sh
+
+  Paso 2 — Generar el instalador .pkg con wizard:
+    bash create_pkg.sh
+
+  El instalador final estará en:
+    installer_output/PacheVideo_v1.0.0.pkg
+
+ÍCONO (RECOMENDADO)
+────────────────────
+En macOS el formato de ícono nativo es .icns (no .ico).
+Para convertir icon.ico a icon.icns:
+
+  1. Abrí icon.ico con "Vista Previa" (Preview)
+  2. Exportá como PNG a 1024×1024 px
+  3. Usá este comando para convertir:
+       mkdir icon.iconset
+       sips -z 512 512 icon.png --out icon.iconset/icon_512x512.png
+       sips -z 256 256 icon.png --out icon.iconset/icon_256x256.png
+       sips -z 128 128 icon.png --out icon.iconset/icon_128x128.png
+       sips -z 64  64  icon.png --out icon.iconset/icon_64x64.png
+       sips -z 32  32  icon.png --out icon.iconset/icon_32x32.png
+       sips -z 16  16  icon.png --out icon.iconset/icon_16x16.png
+       iconutil -c icns icon.iconset
+  4. Copiá icon.icns a esta carpeta (junto a build.sh)
+
+FONDO DEL WIZARD (.pkg)
+────────────────────────
+Reemplazá pkg_resources/background.png con una imagen PNG
+de tu elección. Tamaño recomendado: 620 × 413 px.
+Fondo sugerido: negro (#080808) con el logo de PacheVideo.
+
+PRIMERA APERTURA — GATEKEEPER
+────────────────────────────────
+Si macOS muestra "no se puede abrir porque es de un
+desarrollador no identificado":
+
+  Opción A (para el usuario final):
+    → Clic derecho sobre PacheVideo.app → Abrir → Abrir
+
+  Opción B (ya automatizada en el postinstall del .pkg):
+    → El script postinstall quita la cuarentena automáticamente.
+
+  Opción C (firma con Developer ID, para distribución masiva):
+    → Descomentá las líneas de "productsign" en create_pkg.sh
+
+ESTRUCTURA DE LA CARPETA
+──────────────────────────
+PacheVideo_Mac/
+├── pache_video.py          ← App adaptada para macOS
+├── requirements.txt        ← Dependencias Python
+├── build.sh                ← Paso 1: compila PacheVideo.app
+├── create_pkg.sh           ← Paso 2: genera el .pkg con wizard
+├── LEEME_MAC.txt           ← Este archivo
+└── pkg_resources/
+    ├── distribution.xml    ← Estructura del wizard
+    ├── welcome.html        ← Página de bienvenida (branding)
+    ← conclusion.html      ← Página de conclusión
+    ├── background.png      ← Imagen de fondo del wizard (reemplazar)
+    └── scripts/
+        └── postinstall     ← Script post-instalación
+
+══════════════════════════════════════════════════════════════
