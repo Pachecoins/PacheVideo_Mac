@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background: #080808;
+    color: #EAEAEA;
+    padding: 28px 32px;
+    height: 100%;
+  }
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+  .check-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #A020F0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+  }
+  .check-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #EAEAEA;
+  }
+  .check-sub {
+    font-size: 12px;
+    color: #D4AF37;
+    margin-top: 3px;
+  }
+  .divider {
+    height: 1px;
+    background: linear-gradient(to right, #A020F0, #D4AF37, transparent);
+    margin-bottom: 22px;
+  }
+  p {
+    font-size: 13px;
+    color: #888888;
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+  .steps {
+    list-style: none;
+    margin-bottom: 20px;
+  }
+  .steps li {
+    font-size: 13px;
+    color: #EAEAEA;
+    padding: 6px 0;
+    border-bottom: 1px solid #1A1A1A;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .step-num {
+    background: #1A1A1A;
+    color: #D4AF37;
+    font-weight: 700;
+    font-size: 11px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .note {
+    font-size: 11px;
+    color: #555555;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+  <div class="check-row">
+    <div class="check-circle">✓</div>
+    <div>
+      <div class="check-title">¡PacheVideo fue instalado!</div>
+      <div class="check-sub">La instalación finalizó correctamente.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <p>
+    <strong style="color:#EAEAEA">PacheVideo</strong> está listo para usar.
+    Podés encontrarlo en tu carpeta <strong style="color:#EAEAEA">Aplicaciones</strong>.
+  </p>
+
+  <ul class="steps">
+    <li>
+      <div class="step-num">1</div>
+      Abrí <strong>Finder → Aplicaciones → PacheVideo</strong>
+    </li>
+    <li>
+      <div class="step-num">2</div>
+      Pegá una URL de YouTube en el campo de URL
+    </li>
+    <li>
+      <div class="step-num">3</div>
+      Elegí el formato y calidad, y hacé clic en <strong>⬇ Descargar</strong>
+    </li>
+  </ul>
+
+  <p>
+    Tus descargas se guardarán en<br/>
+    <strong style="color:#EAEAEA">~/Downloads</strong> por defecto.
+    Podés cambiarlo desde la app.
+  </p>
+
+  <p class="note">
+    Si macOS bloquea la app la primera vez, andá a<br/>
+    Preferencias del Sistema → Seguridad y Privacidad → Abrir de todas formas.
+  </p>
+</body>
+</html>
