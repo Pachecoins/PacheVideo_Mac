@@ -6,7 +6,7 @@ set -e
 
 APP_DIR="$HOME/.pachevideo"
 REPO="https://github.com/Pachecoins/PacheVideo_Mac.git"
-LAUNCHER="$HOME/Desktop/PacheVideo.command"
+PYTHON="/opt/homebrew/bin/python3.12"
 
 echo ""
 echo "  ╔══════════════════════════════════════╗"
@@ -14,26 +14,39 @@ echo "  ║        PacheVideo  Installer         ║"
 echo "  ╚══════════════════════════════════════╝"
 echo ""
 
-# ── 1. Python 3 ───────────────────────────────
-echo "→ Verificando Python 3..."
-if ! command -v python3 &>/dev/null; then
-    echo ""
-    echo "  ✗  Python 3 no encontrado."
-    echo "     Instalalo desde: https://www.python.org/downloads/"
-    echo "     Luego volvé a ejecutar este script."
-    exit 1
+# ── Detectar Escritorio (español o inglés) ────
+if [ -d "$HOME/Desktop" ]; then
+    DESKTOP="$HOME/Desktop"
+elif [ -d "$HOME/Escritorio" ]; then
+    DESKTOP="$HOME/Escritorio"
+else
+    DESKTOP="$HOME/Desktop"
+    mkdir -p "$DESKTOP"
 fi
-echo "  ✓  $(python3 --version)"
+LAUNCHER="$DESKTOP/PacheVideo.command"
 
-# ── 2. Homebrew ───────────────────────────────
+# ── 1. Homebrew ───────────────────────────────
 echo "→ Verificando Homebrew..."
-if ! command -v brew &>/dev/null; then
+if ! command -v brew &>/dev/null && [ ! -f /opt/homebrew/bin/brew ]; then
     echo "  → Instalando Homebrew (puede pedir tu contraseña)..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    # Apple Silicon path
-    [ -f /opt/homebrew/bin/brew ] && eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
+# Agregar Homebrew al PATH si no está
+if [ -f /opt/homebrew/bin/brew ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+    # Guardar en .zprofile si no está ya
+    if ! grep -q "brew shellenv" "$HOME/.zprofile" 2>/dev/null; then
+        echo >> "$HOME/.zprofile"
+        echo 'eval "$(/opt/homebrew/bin/brew shellenv zsh)"' >> "$HOME/.zprofile"
+    fi
 fi
 echo "  ✓  Homebrew listo"
+
+# ── 2. Tcl/Tk + Python 3.12 ──────────────────
+echo "→ Instalando Python 3.12 con soporte gráfico..."
+brew install tcl-tk python@3.12 python-tk@3.12 2>/dev/null || true
+echo "  ✓  Python 3.12 listo"
 
 # ── 3. ffmpeg ─────────────────────────────────
 echo "→ Verificando ffmpeg..."
@@ -52,39 +65,37 @@ else
     rm -rf "$APP_DIR"
     git clone --quiet "$REPO" "$APP_DIR"
 fi
-echo "  ✓  Código listo en $APP_DIR"
+echo "  ✓  Código listo"
 
 # ── 5. Entorno virtual + dependencias ─────────
 echo "→ Instalando dependencias Python..."
-python3 -m venv "$APP_DIR/venv" --quiet
+rm -rf "$APP_DIR/venv"
+"$PYTHON" -m venv "$APP_DIR/venv"
 "$APP_DIR/venv/bin/pip" install --quiet --upgrade pip
 "$APP_DIR/venv/bin/pip" install --quiet customtkinter yt-dlp Pillow
 echo "  ✓  Dependencias instaladas"
 
 # ── 6. Lanzador en el Escritorio ──────────────
 echo "→ Creando lanzador en el Escritorio..."
-cat > "$LAUNCHER" <<'LAUNCH'
+cat > "$LAUNCHER" << 'LAUNCH'
 #!/bin/bash
-APP_DIR="$HOME/.pachevideo"
-source "$APP_DIR/venv/bin/activate"
-python3 "$APP_DIR/pache_video.py"
+~/.pachevideo/venv/bin/python3 ~/.pachevideo/pache_video.py
 LAUNCH
 chmod +x "$LAUNCHER"
-echo "  ✓  PacheVideo.command creado en el Escritorio"
+echo "  ✓  PacheVideo.command creado en: $DESKTOP"
 
 # ── 7. Listo ──────────────────────────────────
 echo ""
 echo "  ╔══════════════════════════════════════╗"
 echo "  ║   ✓  Instalación completada          ║"
 echo "  ║                                      ║"
-echo "  ║   Abrí PacheVideo.command desde      ║"
-echo "  ║   tu Escritorio para iniciar la app  ║"
+echo "  ║   Doble clic en PacheVideo.command   ║"
+echo "  ║   (primera vez: click derecho→Abrir) ║"
 echo "  ╚══════════════════════════════════════╝"
 echo ""
 
-# Abrir la app ahora mismo
 read -r -p "  ¿Abrir PacheVideo ahora? [S/n] " resp
 resp="${resp:-S}"
 if [[ "$resp" =~ ^[Ss]$ ]]; then
-    open "$LAUNCHER"
+    ~/.pachevideo/venv/bin/python3 ~/.pachevideo/pache_video.py &
 fi
