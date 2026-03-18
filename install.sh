@@ -75,14 +75,14 @@ echo "  ✓  Dependencias instaladas"
 
 # ── 6. Convertir ícono ico → icns (via Pillow) ──
 echo "→ Preparando ícono..."
+rm -f /tmp/PacheVideo.icns
 if [ -f "$APP_DIR/icon.ico" ]; then
     rm -rf /tmp/pache.iconset
     mkdir -p /tmp/pache.iconset
-    "$APP_DIR/venv/bin/python3" - <<'PYEOF'
-import sys
+    "$APP_DIR/venv/bin/python3" - "$APP_DIR/icon.ico" <<'PYEOF' || true
+import sys, os
 from PIL import Image
-src = "/root/.pachevideo/icon.ico" if __import__('os').path.exists("/root/.pachevideo/icon.ico") else __import__('os').path.expanduser("~/.pachevideo/icon.ico")
-sizes = [16, 32, 64, 128, 256, 512]
+src = sys.argv[1]
 names = {
     16:  ["icon_16x16.png"],
     32:  ["icon_16x16@2x.png", "icon_32x32.png"],
@@ -96,10 +96,9 @@ for size, filenames in names.items():
     resized = img.resize((size, size), Image.LANCZOS)
     for name in filenames:
         resized.save(f"/tmp/pache.iconset/{name}")
-print("ok")
 PYEOF
-    iconutil -c icns /tmp/pache.iconset -o /tmp/PacheVideo.icns 2>/dev/null
-    echo "  ✓  Ícono listo"
+    iconutil -c icns /tmp/pache.iconset -o /tmp/PacheVideo.icns 2>/dev/null || true
+    [ -f /tmp/PacheVideo.icns ] && echo "  ✓  Ícono listo" || echo "  ⚠  No se pudo convertir el ícono, se usará ícono por defecto"
 else
     echo "  ⚠  icon.ico no encontrado, se usará ícono por defecto"
 fi
