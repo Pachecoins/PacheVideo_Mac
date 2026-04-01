@@ -606,6 +606,18 @@ class PacheVideo(ctk.CTk):
                      font=ctk.CTkFont(size=10),
                      text_color=ff_color).pack(anchor="w")
 
+        # — Actualizar
+        self._section_label(content, "Actualizaciones")
+        self._update_status_lbl = ctk.CTkLabel(
+            content, text="",
+            font=ctk.CTkFont(size=10), text_color=TEXT_MUTED,
+        )
+        self._update_status_lbl.pack(anchor="w", pady=(0, 4))
+        GlowButton(content, text="⟳  Buscar y actualizar", height=40,
+                   fg_color=SURFACE, hover_color=PURPLE_DARK,
+                   text_color=GOLD, font=ctk.CTkFont(size=12),
+                   command=self._do_update).pack(fill="x", pady=(0, 14))
+
         # — About
         ctk.CTkLabel(content, text="PacheVideo v1.0  ·  Powered by yt-dlp",
                      font=ctk.CTkFont(size=10),
@@ -684,6 +696,41 @@ class PacheVideo(ctk.CTk):
             self.url_entry.insert(0, text)
         except Exception:
             pass
+
+    def _do_update(self):
+        app_dir = os.path.join(os.path.expanduser("~"), ".pachevideo")
+        if not os.path.isdir(os.path.join(app_dir, ".git")):
+            self._update_status_lbl.configure(
+                text="No se encontró el repositorio git en ~/.pachevideo", text_color=ERROR_RED)
+            return
+        self._update_status_lbl.configure(text="Buscando actualizaciones...", text_color=TEXT_MUTED)
+        self.update_idletasks()
+
+        def run():
+            try:
+                result = subprocess.run(
+                    ["git", "-C", app_dir, "pull"],
+                    capture_output=True, text=True,
+                )
+                if "Already up to date" in result.stdout:
+                    self.after(0, self._update_status_lbl.configure,
+                               {"text": "Ya tenés la última versión.", "text_color": SUCCESS})
+                elif result.returncode == 0:
+                    self.after(0, self._update_status_lbl.configure,
+                               {"text": "¡Actualización descargada! Reiniciando...", "text_color": SUCCESS})
+                    self.after(1500, self._restart_app)
+                else:
+                    self.after(0, self._update_status_lbl.configure,
+                               {"text": f"Error: {result.stderr.strip()}", "text_color": ERROR_RED})
+            except Exception as e:
+                self.after(0, self._update_status_lbl.configure,
+                           {"text": str(e), "text_color": ERROR_RED})
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def _restart_app(self):
+        self.destroy()
+        os.execv(sys.executable, [sys.executable] + sys.argv)
 
     def _browse_cookies(self):
         path = filedialog.askopenfilename(
