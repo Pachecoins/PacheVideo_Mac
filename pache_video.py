@@ -285,6 +285,7 @@ class PacheVideo(ctk.CTk):
         self._download_thread = None
         self._history = []
         self._pulse_job = None
+        self._browser_var = ctk.StringVar(value="Ninguno")
 
         self._build_sidebar()
         self._build_panels()
@@ -534,6 +535,22 @@ class PacheVideo(ctk.CTk):
                            f"Actual: {self._output_folder}",
                            "Cambiar", self._browse_folder)
 
+        # — Navegador para cookies (evitar bloqueo de YouTube)
+        self._section_label(content, "Navegador para cookies de YouTube")
+        ctk.CTkLabel(content,
+                     text="Usá las cookies de tu navegador para evitar el error 'Sign in to confirm you're not a bot'.",
+                     font=ctk.CTkFont(size=10), text_color=TEXT_MUTED,
+                     wraplength=480, justify="left").pack(anchor="w", pady=(0, 6))
+        browsers = ["Ninguno", "chrome", "firefox", "edge", "brave", "safari"]
+        ctk.CTkOptionMenu(
+            content,
+            values=browsers,
+            variable=self._browser_var,
+            height=38, font=ctk.CTkFont(size=12), corner_radius=8,
+            fg_color=SURFACE, button_color=PURPLE_DARK,
+            button_hover_color=PURPLE, text_color=TEXT_PRIMARY,
+        ).pack(fill="x", pady=(0, 14))
+
         # — Color de acento
         self._section_label(content, "Color de acento")
         self._accent_var = ctk.StringVar(value="Púrpura")
@@ -769,6 +786,10 @@ class PacheVideo(ctk.CTk):
         }
         if audio_only:
             ydl_opts.pop("merge_output_format")
+
+        browser = self._browser_var.get()
+        if browser != "Ninguno":
+            ydl_opts["cookiesfrombrowser"] = (browser, None, None, None)
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
