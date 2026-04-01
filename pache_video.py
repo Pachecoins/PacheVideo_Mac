@@ -782,11 +782,12 @@ class PacheVideo(ctk.CTk):
         if audio_only:
             fmt = "bestaudio/best"
         elif quality == "Máxima calidad":
-            fmt = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best"
+            fmt = "bestvideo[vcodec^=avc1][ext=mp4]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best"
         else:
             h = quality.replace("p", "")
             fmt = (
-                f"bestvideo[ext=mp4][height<={h}]+bestaudio[ext=m4a]"
+                f"bestvideo[vcodec^=avc1][ext=mp4][height<={h}]+bestaudio[ext=m4a]"
+                f"/bestvideo[ext=mp4][height<={h}]+bestaudio[ext=m4a]"
                 f"/bestvideo[height<={h}]+bestaudio"
                 f"/best[height<={h}]"
                 f"/best"
