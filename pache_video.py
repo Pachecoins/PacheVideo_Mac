@@ -286,6 +286,7 @@ class PacheVideo(ctk.CTk):
         self._history = []
         self._pulse_job = None
         self._browser_var = ctk.StringVar(value="Ninguno")
+        self._cookies_file = ""
 
         self._build_sidebar()
         self._build_panels()
@@ -535,10 +536,34 @@ class PacheVideo(ctk.CTk):
                            f"Actual: {self._output_folder}",
                            "Cambiar", self._browse_folder)
 
-        # — Navegador para cookies (evitar bloqueo de YouTube)
-        self._section_label(content, "Navegador para cookies de YouTube")
+        # — Cookies file (método más confiable)
+        self._section_label(content, "Archivo de cookies (recomendado)")
         ctk.CTkLabel(content,
-                     text="Usá las cookies de tu navegador para evitar el error 'Sign in to confirm you're not a bot'.",
+                     text="Exportá cookies.txt desde YouTube con la extensión 'Get cookies.txt LOCALLY' y seleccioná el archivo acá.",
+                     font=ctk.CTkFont(size=10), text_color=TEXT_MUTED,
+                     wraplength=480, justify="left").pack(anchor="w", pady=(0, 6))
+        cookies_row = ctk.CTkFrame(content, fg_color="transparent")
+        cookies_row.pack(fill="x", pady=(0, 6))
+        self._cookies_entry = ctk.CTkEntry(
+            cookies_row, height=38, font=ctk.CTkFont(size=11),
+            state="readonly", corner_radius=8,
+            fg_color=SURFACE, border_color=BORDER_SUBTLE, border_width=1,
+            text_color=TEXT_SECONDARY,
+        )
+        self._cookies_entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
+        GlowButton(cookies_row, text="Buscar", width=90, height=38,
+                   fg_color=SURFACE, hover_color=PURPLE_DARK,
+                   text_color=GOLD, font=ctk.CTkFont(size=12),
+                   command=self._browse_cookies).pack(side="right")
+        GlowButton(content, text="Limpiar cookies", height=32,
+                   fg_color=SURFACE, hover_color=ERROR_RED,
+                   text_color=TEXT_MUTED, font=ctk.CTkFont(size=11),
+                   command=self._clear_cookies).pack(anchor="w", pady=(0, 14))
+
+        # — Navegador para cookies (alternativa)
+        self._section_label(content, "Navegador para cookies (alternativa)")
+        ctk.CTkLabel(content,
+                     text="Si no tenés el archivo, cerrá Chrome/Edge primero y seleccioná tu navegador.",
                      font=ctk.CTkFont(size=10), text_color=TEXT_MUTED,
                      wraplength=480, justify="left").pack(anchor="w", pady=(0, 6))
         browsers = ["Ninguno", "chrome", "firefox", "edge", "brave", "safari"]
@@ -659,6 +684,24 @@ class PacheVideo(ctk.CTk):
             self.url_entry.insert(0, text)
         except Exception:
             pass
+
+    def _browse_cookies(self):
+        path = filedialog.askopenfilename(
+            title="Seleccionar cookies.txt",
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+        )
+        if path:
+            self._cookies_file = path
+            self._cookies_entry.configure(state="normal")
+            self._cookies_entry.delete(0, "end")
+            self._cookies_entry.insert(0, path)
+            self._cookies_entry.configure(state="readonly")
+
+    def _clear_cookies(self):
+        self._cookies_file = ""
+        self._cookies_entry.configure(state="normal")
+        self._cookies_entry.delete(0, "end")
+        self._cookies_entry.configure(state="readonly")
 
     def _browse_folder(self):
         folder = filedialog.askdirectory(initialdir=self._output_folder)
@@ -788,9 +831,12 @@ class PacheVideo(ctk.CTk):
         if audio_only:
             ydl_opts.pop("merge_output_format")
 
-        browser = self._browser_var.get()
-        if browser != "Ninguno":
-            ydl_opts["cookiesfrombrowser"] = (browser, None, None, None)
+        if self._cookies_file and os.path.isfile(self._cookies_file):
+            ydl_opts["cookiefile"] = self._cookies_file
+        else:
+            browser = self._browser_var.get()
+            if browser != "Ninguno":
+                ydl_opts["cookiesfrombrowser"] = (browser, None, None, None)
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
