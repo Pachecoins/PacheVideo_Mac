@@ -784,6 +784,7 @@ class PacheVideo(ctk.CTk):
             "postprocessors": postprocessors,
             "ffmpeg_location": FFMPEG_PATH,
             "extractor_args": {"youtube": {"player_client": ["tv_embedded", "web"]}},
+            "impersonate": "chrome",
         }
         if audio_only:
             ydl_opts.pop("merge_output_format")
