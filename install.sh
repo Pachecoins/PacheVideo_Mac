@@ -73,22 +73,32 @@ rm -rf "$APP_DIR/venv"
 "$APP_DIR/venv/bin/pip" install --quiet customtkinter yt-dlp Pillow
 echo "  ✓  Dependencias instaladas"
 
-# ── 6. Convertir ícono ico → icns ─────────────
+# ── 6. Convertir ícono ico → icns (via Pillow) ──
 echo "→ Preparando ícono..."
+rm -f /tmp/PacheVideo.icns
 if [ -f "$APP_DIR/icon.ico" ]; then
     rm -rf /tmp/pache.iconset
     mkdir -p /tmp/pache.iconset
-    sips -z 16 16   "$APP_DIR/icon.ico" --out /tmp/pache.iconset/icon_16x16.png    &>/dev/null
-    sips -z 32 32   "$APP_DIR/icon.ico" --out /tmp/pache.iconset/icon_16x16@2x.png &>/dev/null
-    sips -z 32 32   "$APP_DIR/icon.ico" --out /tmp/pache.iconset/icon_32x32.png    &>/dev/null
-    sips -z 64 64   "$APP_DIR/icon.ico" --out /tmp/pache.iconset/icon_32x32@2x.png &>/dev/null
-    sips -z 128 128 "$APP_DIR/icon.ico" --out /tmp/pache.iconset/icon_128x128.png  &>/dev/null
-    sips -z 256 256 "$APP_DIR/icon.ico" --out /tmp/pache.iconset/icon_128x128@2x.png &>/dev/null
-    sips -z 256 256 "$APP_DIR/icon.ico" --out /tmp/pache.iconset/icon_256x256.png  &>/dev/null
-    sips -z 512 512 "$APP_DIR/icon.ico" --out /tmp/pache.iconset/icon_256x256@2x.png &>/dev/null
-    sips -z 512 512 "$APP_DIR/icon.ico" --out /tmp/pache.iconset/icon_512x512.png  &>/dev/null
-    iconutil -c icns /tmp/pache.iconset -o /tmp/PacheVideo.icns 2>/dev/null
-    echo "  ✓  Ícono listo"
+    "$APP_DIR/venv/bin/python3" - "$APP_DIR/icon.ico" <<'PYEOF' || true
+import sys, os
+from PIL import Image
+src = sys.argv[1]
+names = {
+    16:  ["icon_16x16.png"],
+    32:  ["icon_16x16@2x.png", "icon_32x32.png"],
+    64:  ["icon_32x32@2x.png"],
+    128: ["icon_128x128.png"],
+    256: ["icon_128x128@2x.png", "icon_256x256.png"],
+    512: ["icon_256x256@2x.png", "icon_512x512.png"],
+}
+img = Image.open(src).convert("RGBA")
+for size, filenames in names.items():
+    resized = img.resize((size, size), Image.LANCZOS)
+    for name in filenames:
+        resized.save(f"/tmp/pache.iconset/{name}")
+PYEOF
+    iconutil -c icns /tmp/pache.iconset -o /tmp/PacheVideo.icns 2>/dev/null || true
+    [ -f /tmp/PacheVideo.icns ] && echo "  ✓  Ícono listo" || echo "  ⚠  No se pudo convertir el ícono, se usará ícono por defecto"
 else
     echo "  ⚠  icon.ico no encontrado, se usará ícono por defecto"
 fi
