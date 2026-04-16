@@ -772,12 +772,28 @@ class PacheVideo(ctk.CTk):
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=False)
+                try:
+                    info = ydl.extract_info(url, download=False)
+                except yt_dlp.utils.DownloadError as e:
+                    if "Requested format is not available" in str(e):
+                        ydl_opts["format"] = "bestaudio/best" if audio_only else "best"
+                        with yt_dlp.YoutubeDL(ydl_opts) as ydl2:
+                            info = ydl2.extract_info(url, download=False)
+                    else:
+                        raise
                 title = info.get("title", "video")
                 short = title[:50] + ("…" if len(title) > 50 else "")
                 thumbnail_url = info.get("thumbnail", "")
                 self.after(0, self._set_status, f"Descargando: {short}", TEXT_SECONDARY)
-                ydl.download([url])
+                try:
+                    ydl.download([url])
+                except yt_dlp.utils.DownloadError as e:
+                    if "Requested format is not available" in str(e):
+                        ydl_opts["format"] = "bestaudio/best" if audio_only else "best"
+                        with yt_dlp.YoutubeDL(ydl_opts) as ydl2:
+                            ydl2.download([url])
+                    else:
+                        raise
 
             self.after(0, self._set_progress, 1.0)
             self.after(0, self._set_status, f"✓  Completado: {short}", SUCCESS)
