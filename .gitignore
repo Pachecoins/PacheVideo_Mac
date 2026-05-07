@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+
+build/
+dist/
+build_codex/
+dist_codex/
+installer_output/
+*.spec
+
+ffmpeg
+ffmpeg.exe
+
+.venv/
+venv/

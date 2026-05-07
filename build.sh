@@ -1,99 +1,129 @@
-#!/bin/bash
-# ============================================================
-#   PacheVideo — macOS Builder
-#   Equivalente a build.bat pero para macOS
-#   Ejecutar ANTES de create_pkg.sh
-# ============================================================
+#!/usr/bin/env bash
+set -euo pipefail
 
-set -e
+APP_NAME="PacheVideo"
+BUNDLE_ID="com.pachevideo.app"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT"
 
 echo ""
-echo "  ╔══════════════════════════════════════╗"
-echo "  ║        PacheVideo  Builder           ║"
-echo "  ║           macOS Edition              ║"
-echo "  ╚══════════════════════════════════════╝"
+echo "========================================"
+echo "  PacheVideo macOS Builder"
+echo "========================================"
 echo ""
 
-# ── 1. Verificar Python 3 ──────────────────────────────────
-if ! command -v python3 &> /dev/null; then
-    echo "  [ERROR] Python 3 no está instalado."
-    echo "  Instalalo desde: https://www.python.org/downloads/macos/"
-    echo "  O con Homebrew:  brew install python"
-    exit 1
-fi
-echo "  [1/5] Python: $(python3 --version)"
-
-# ── 2. Instalar dependencias ───────────────────────────────
-echo "  [2/5] Instalando dependencias..."
-pip3 install -r requirements.txt --quiet
-echo "  OK"
-
-# ── 3. Descargar ffmpeg para macOS ─────────────────────────
-echo "  [3/5] Descargando ffmpeg para macOS..."
-python3 -c "import ffmpeg_downloader as ffd; ffd.download()" 2>/dev/null || true
-
-FFMPEG_PATH=$(python3 -c "import ffmpeg_downloader as ffd; print(ffd.ffmpeg_path)" 2>/dev/null || echo "")
-
-if [ -z "$FFMPEG_PATH" ] || [ ! -f "$FFMPEG_PATH" ]; then
-    # Fallback: ffmpeg del sistema (Homebrew)
-    FFMPEG_PATH=$(which ffmpeg 2>/dev/null || echo "")
+if [[ "$(uname -s)" != "Darwin" ]]; then
+  echo "Este build debe ejecutarse en macOS para generar PacheVideo.app."
+  exit 1
 fi
 
-if [ -z "$FFMPEG_PATH" ] || [ ! -f "$FFMPEG_PATH" ]; then
-    echo "  [ERROR] No se encontró ffmpeg."
-    echo "  Instalalo con Homebrew: brew install ffmpeg"
-    exit 1
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+  echo "No se encontro python3. Instala Python 3.11+ o Homebrew: brew install python"
+  exit 1
 fi
 
-echo "  ffmpeg: $FFMPEG_PATH"
+echo "[1/6] Python:"
+"$PYTHON_BIN" --version
+
+if ! "$PYTHON_BIN" -m pip --version >/dev/null 2>&1; then
+  echo "pip no esta activo. Intentando ensurepip..."
+  "$PYTHON_BIN" -m ensurepip --upgrade
+fi
+
+echo "[2/6] Instalando dependencias..."
+"$PYTHON_BIN" -m pip install --upgrade pip
+"$PYTHON_BIN" -m pip install -r requirements.txt
+
+echo "[3/6] Preparando ffmpeg..."
+FFMPEG_PATH=""
+if "$PYTHON_BIN" - <<'PY' >/dev/null 2>&1
+import ffmpeg_downloader as ffd
+ffd.download()
+PY
+then
+  FFMPEG_PATH="$("$PYTHON_BIN" - <<'PY' 2>/dev/null || true
+import ffmpeg_downloader as ffd
+print(ffd.ffmpeg_path)
+PY
+)"
+fi
+
+if [[ -z "$FFMPEG_PATH" || ! -f "$FFMPEG_PATH" ]]; then
+  FFMPEG_PATH="$(command -v ffmpeg || true)"
+fi
+
+if [[ -z "$FFMPEG_PATH" || ! -f "$FFMPEG_PATH" ]]; then
+  echo "No se encontro ffmpeg. Instala Homebrew y ejecuta: brew install ffmpeg"
+  exit 1
+fi
+
 cp -f "$FFMPEG_PATH" ./ffmpeg
 chmod +x ./ffmpeg
+echo "ffmpeg: $FFMPEG_PATH"
 
-# ── 4. Icono macOS (.icns preferido, .ico como fallback) ───
-echo "  [4/5] Configurando icono..."
-ICON_FLAG=""
-if [ -f "icon.icns" ]; then
-    ICON_FLAG="--icon icon.icns"
-    echo "  Usando icon.icns"
-elif [ -f "icon.ico" ]; then
-    ICON_FLAG="--icon icon.ico"
-    echo "  Usando icon.ico (recomendado: convertir a .icns)"
-else
-    echo "  Sin icono (agregar icon.icns para mejor apariencia)"
+echo "[4/6] Preparando icono macOS..."
+ICON_ARG=()
+if [[ ! -f icon.icns && -f logo.png ]]; then
+  rm -rf icon.iconset
+  mkdir -p icon.iconset
+  sips -z 16 16 logo.png --out icon.iconset/icon_16x16.png >/dev/null
+  sips -z 32 32 logo.png --out icon.iconset/icon_16x16@2x.png >/dev/null
+  sips -z 32 32 logo.png --out icon.iconset/icon_32x32.png >/dev/null
+  sips -z 64 64 logo.png --out icon.iconset/icon_32x32@2x.png >/dev/null
+  sips -z 128 128 logo.png --out icon.iconset/icon_128x128.png >/dev/null
+  sips -z 256 256 logo.png --out icon.iconset/icon_128x128@2x.png >/dev/null
+  sips -z 256 256 logo.png --out icon.iconset/icon_256x256.png >/dev/null
+  sips -z 512 512 logo.png --out icon.iconset/icon_256x256@2x.png >/dev/null
+  sips -z 512 512 logo.png --out icon.iconset/icon_512x512.png >/dev/null
+  sips -z 1024 1024 logo.png --out icon.iconset/icon_512x512@2x.png >/dev/null
+  iconutil -c icns icon.iconset -o icon.icns
+  rm -rf icon.iconset
 fi
 
-# ── 5. Construir PacheVideo.app con PyInstaller ────────────
-echo "  [5/5] Construyendo PacheVideo.app..."
+if [[ -f icon.icns ]]; then
+  ICON_ARG=(--icon icon.icns)
+fi
 
-pyinstaller \
-    --onefile \
-    --windowed \
-    --name "PacheVideo" \
-    $ICON_FLAG \
-    --add-binary "ffmpeg:." \
-    --hidden-import customtkinter \
-    --hidden-import yt_dlp \
-    --hidden-import PIL \
-    --collect-all customtkinter \
-    --osx-bundle-identifier "com.pachevideo.app" \
-    pache_video.py
+echo "[5/6] Limpiando builds anteriores..."
+rm -rf build dist
+rm -f PacheVideo.spec
 
-# ── Limpiar temporales ─────────────────────────────────────
+echo "[6/6] Construyendo PacheVideo.app..."
+"$PYTHON_BIN" -m PyInstaller \
+  --windowed \
+  --name "$APP_NAME" \
+  --osx-bundle-identifier "$BUNDLE_ID" \
+  "${ICON_ARG[@]}" \
+  --add-binary "ffmpeg:." \
+  --add-data "logo.png:." \
+  --hidden-import customtkinter \
+  --hidden-import yt_dlp \
+  --hidden-import PIL \
+  --hidden-import mutagen \
+  --hidden-import yt_dlp_ejs \
+  --collect-all customtkinter \
+  --collect-all yt_dlp_ejs \
+  pache_video.py
+
 rm -f ./ffmpeg
 rm -rf build
 rm -f PacheVideo.spec
 
-if [ -d "dist/PacheVideo.app" ]; then
-    echo ""
-    echo "  ╔══════════════════════════════════════════════════════════════╗"
-    echo "  ║  ¡Listo!  La app está en:  dist/PacheVideo.app              ║"
-    echo "  ║                                                              ║"
-    echo "  ║  Siguiente paso: bash create_pkg.sh                         ║"
-    echo "  ║  para generar el instalador .pkg con wizard de macOS.       ║"
-    echo "  ╚══════════════════════════════════════════════════════════════╝"
-else
-    echo ""
-    echo "  [ERROR] No se generó dist/PacheVideo.app. Revisá los errores arriba."
-    exit 1
+if [[ ! -d "dist/${APP_NAME}.app" ]]; then
+  echo "No se genero dist/${APP_NAME}.app."
+  exit 1
 fi
+
+xattr -dr com.apple.quarantine "dist/${APP_NAME}.app" 2>/dev/null || true
+
 echo ""
+echo "Listo. App generada en:"
+echo "  dist/${APP_NAME}.app"
+echo ""
+echo "Para abrir:"
+echo "  open dist/${APP_NAME}.app"
+echo ""
+echo "Para crear instalador:"
+echo "  bash create_pkg.sh"

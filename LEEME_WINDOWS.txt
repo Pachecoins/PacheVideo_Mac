@@ -1,0 +1,45 @@
+PacheVideo - Guia de build para Windows
+=======================================
+
+REQUISITOS
+----------
+1. Windows 10/11
+2. Python 3.10 o superior
+   https://www.python.org/downloads/windows/
+
+   Durante la instalacion de Python, activa "Add python.exe to PATH".
+
+GENERAR EL EJECUTABLE
+---------------------
+Abrir PowerShell en esta carpeta y ejecutar:
+
+  .\build_windows.ps1
+
+Tambien se puede usar:
+
+  build_windows.bat
+
+El resultado queda en:
+
+  dist\PacheVideo.exe
+
+QUE HACE EL BUILD
+-----------------
+- Instala las dependencias de requirements.txt.
+- Descarga o localiza ffmpeg.exe.
+- Empaqueta la app con PyInstaller.
+- Incluye icon.ico y ffmpeg.exe dentro del ejecutable final.
+
+SI YA TENES DEPENDENCIAS INSTALADAS
+-----------------------------------
+Podes saltar la instalacion con:
+
+  .\build_windows.ps1 -SkipInstall
+
+NOTAS
+-----
+- El ejecutable no necesita Python instalado en la PC final.
+- Si Windows Defender o SmartScreen advierte sobre editor desconocido, es normal
+  en builds sin firma digital.
+- Para distribucion masiva conviene firmar el .exe con un certificado de code
+  signing.
