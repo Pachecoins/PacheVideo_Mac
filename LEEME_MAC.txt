@@ -4,6 +4,18 @@ PacheVideo - Guia para macOS
 Esta carpeta ya esta preparada para generar PacheVideo.app en macOS.
 El .exe de Windows no sirve en Mac: en Mac hay que compilar una app nativa.
 
+Instalacion directa desde GitHub
+--------------------------------
+Para pasarselo a otra persona, dale este comando:
+
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/Pachecoins/PacheVideo_Mac/main/install_mac.sh)"
+
+Ese comando baja el repo, compila la app, la instala en:
+
+  ~/Applications/PacheVideo.app
+
+y la abre automaticamente.
+
 Requisitos
 ----------
 1. macOS con Python 3.11+:
