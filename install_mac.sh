@@ -29,6 +29,20 @@ if ! command -v git >/dev/null 2>&1; then
   exit 1
 fi
 
+ensure_brew_package() {
+  local package="$1"
+  local binary="${2:-$1}"
+  if command -v "$binary" >/dev/null 2>&1; then
+    return 0
+  fi
+  if command -v brew >/dev/null 2>&1; then
+    echo "Instalando $package con Homebrew..."
+    brew install "$package"
+    return 0
+  fi
+  return 1
+}
+
 find_modern_python() {
   for candidate in python3.12 python3.11 python3.10 python3; do
     if command -v "$candidate" >/dev/null 2>&1; then
@@ -71,9 +85,15 @@ fi
 
 echo "Python seleccionado: $("$PYTHON_BIN" --version)"
 
+if ! ensure_brew_package deno deno; then
+  echo "Aviso: no se pudo instalar deno porque Homebrew no esta disponible."
+  echo "YouTube puede devolver errores de formato si no puede resolver sus challenges."
+fi
+
 if [[ -d "$WORK_DIR/.git" ]]; then
   echo "[1/4] Actualizando repo en $WORK_DIR..."
-  git -C "$WORK_DIR" pull --ff-only
+  git -C "$WORK_DIR" fetch origin main
+  git -C "$WORK_DIR" reset --hard origin/main
 else
   echo "[1/4] Bajando repo en $WORK_DIR..."
   rm -rf "$WORK_DIR"

@@ -14,6 +14,17 @@ import time
 import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+if sys.platform == "darwin":
+    mac_extra_path = [
+        "/opt/homebrew/bin",
+        "/opt/homebrew/sbin",
+        "/usr/local/bin",
+        "/usr/local/sbin",
+    ]
+    if getattr(sys, "frozen", False):
+        mac_extra_path.insert(0, getattr(sys, "_MEIPASS", os.path.dirname(sys.executable)))
+    os.environ["PATH"] = os.pathsep.join(mac_extra_path + [os.environ.get("PATH", "")])
+
 try:
     from PIL import Image
     PIL_OK = True

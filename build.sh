@@ -50,7 +50,7 @@ VENV_PYTHON="$VENV_DIR/bin/python"
 
 echo "[2/6] Instalando dependencias..."
 "$VENV_PYTHON" -m pip install --upgrade pip
-"$VENV_PYTHON" -m pip install -r requirements.txt
+"$VENV_PYTHON" -m pip install --upgrade -r requirements.txt
 
 echo "[3/6] Preparando ffmpeg..."
 FFMPEG_PATH=""
@@ -78,6 +78,18 @@ fi
 cp -f "$FFMPEG_PATH" ./ffmpeg
 chmod +x ./ffmpeg
 echo "ffmpeg: $FFMPEG_PATH"
+
+echo "Preparando deno para resolver challenges de YouTube..."
+DENO_PATH="$(command -v deno || true)"
+DENO_ARG=()
+if [[ -n "$DENO_PATH" && -f "$DENO_PATH" ]]; then
+  cp -f "$DENO_PATH" ./deno
+  chmod +x ./deno
+  DENO_ARG=(--add-binary "deno:.")
+  echo "deno: $DENO_PATH"
+else
+  echo "Aviso: deno no esta instalado. YouTube puede devolver errores de formato."
+fi
 
 echo "[4/6] Preparando icono macOS..."
 ICON_ARG=()
@@ -113,6 +125,7 @@ echo "[6/6] Construyendo PacheVideo.app..."
   --osx-bundle-identifier "$BUNDLE_ID" \
   "${ICON_ARG[@]}" \
   --add-binary "ffmpeg:." \
+  "${DENO_ARG[@]}" \
   --add-data "logo.png:." \
   --hidden-import customtkinter \
   --hidden-import yt_dlp \
@@ -123,7 +136,7 @@ echo "[6/6] Construyendo PacheVideo.app..."
   --collect-all yt_dlp_ejs \
   pache_video.py
 
-rm -f ./ffmpeg
+rm -f ./ffmpeg ./deno
 rm -rf build
 rm -f PacheVideo.spec
 

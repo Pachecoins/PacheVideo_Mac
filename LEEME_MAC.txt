@@ -34,11 +34,18 @@ Requisitos
 3. FFmpeg, recomendado:
    brew install ffmpeg
 
+4. Deno, recomendado para YouTube:
+   brew install deno
+
+   YouTube cambia seguido sus challenges. Sin Deno, yt-dlp puede listar
+   solo imagenes o fallar con "invalid format" aunque el video tenga
+   formatos validos. El instalador intenta instalarlo automaticamente.
+
 Probar sin instalar
 -------------------
 Desde Terminal, dentro de esta carpeta:
 
-  python3 -m pip install -r requirements.txt
+  python3 -m pip install --upgrade -r requirements.txt
   python3 pache_video.py
 
 Generar PacheVideo.app
@@ -80,6 +87,7 @@ Notas de compatibilidad
 - El logo se toma desde logo.png.
 - build.sh genera icon.icns automaticamente desde logo.png si no existe.
 - ffmpeg se incluye dentro de la app.
+- deno se incluye dentro de la app si esta instalado con Homebrew al compilar.
 - Las notificaciones usan osascript en macOS.
 - El boton de actualizar usa Terminal en macOS y PowerShell en Windows.
 - Las descargas se guardan en ~/.pachevideo/downloads.json.
