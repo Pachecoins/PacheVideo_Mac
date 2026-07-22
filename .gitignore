@@ -12,4 +12,5 @@ ffmpeg
 ffmpeg.exe
 
 .venv/
+.venv-macos/
 venv/

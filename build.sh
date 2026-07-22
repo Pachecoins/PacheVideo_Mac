@@ -39,23 +39,27 @@ fi
 echo "[1/6] Python:"
 "$PYTHON_BIN" --version
 
-if ! "$PYTHON_BIN" -m pip --version >/dev/null 2>&1; then
-  echo "pip no esta activo. Intentando ensurepip..."
-  "$PYTHON_BIN" -m ensurepip --upgrade
+VENV_DIR="${VENV_DIR:-$ROOT/.venv-macos}"
+
+if [[ ! -x "$VENV_DIR/bin/python" ]]; then
+  echo "Creando entorno virtual en $VENV_DIR..."
+  "$PYTHON_BIN" -m venv "$VENV_DIR"
 fi
 
+VENV_PYTHON="$VENV_DIR/bin/python"
+
 echo "[2/6] Instalando dependencias..."
-"$PYTHON_BIN" -m pip install --upgrade pip
-"$PYTHON_BIN" -m pip install -r requirements.txt
+"$VENV_PYTHON" -m pip install --upgrade pip
+"$VENV_PYTHON" -m pip install -r requirements.txt
 
 echo "[3/6] Preparando ffmpeg..."
 FFMPEG_PATH=""
-if "$PYTHON_BIN" - <<'PY' >/dev/null 2>&1
+if "$VENV_PYTHON" - <<'PY' >/dev/null 2>&1
 import ffmpeg_downloader as ffd
 ffd.download()
 PY
 then
-  FFMPEG_PATH="$("$PYTHON_BIN" - <<'PY' 2>/dev/null || true
+  FFMPEG_PATH="$("$VENV_PYTHON" - <<'PY' 2>/dev/null || true
 import ffmpeg_downloader as ffd
 print(ffd.ffmpeg_path)
 PY
@@ -103,7 +107,7 @@ rm -rf build dist
 rm -f PacheVideo.spec
 
 echo "[6/6] Construyendo PacheVideo.app..."
-"$PYTHON_BIN" -m PyInstaller \
+"$VENV_PYTHON" -m PyInstaller \
   --windowed \
   --name "$APP_NAME" \
   --osx-bundle-identifier "$BUNDLE_ID" \
