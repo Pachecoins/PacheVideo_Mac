@@ -1624,15 +1624,22 @@ class PacheVideo(ctk.CTk):
         if self.pref_video_quality_mode.get() == "select":
             quality = self.pref_video_resolution.get().split("p")[0] + "p"
         if quality == "Maxima calidad":
-            return "bv*[vcodec^=avc1]+ba/b[vcodec^=avc1]/bv*[vcodec^=vp09]+ba/b[vcodec^=vp09]/b[vcodec!*=av01][vcodec!*=av1]/b"
+            return (
+                "bv*[vcodec^=avc1]+ba[ext=m4a]/b[vcodec^=avc1]"
+                "/bv*[ext=mp4][vcodec!*=av01][vcodec!*=av1]+ba[ext=m4a]"
+                "/b[ext=mp4][vcodec!*=av01][vcodec!*=av1]"
+                "/bv*[vcodec^=vp09]+ba/b[vcodec^=vp09]"
+                "/b[vcodec!*=av01][vcodec!*=av1]"
+            )
         h = quality.replace("p", "")
         return (
             f"bv*[vcodec^=avc1][height<={h}]+ba"
             f"/b[vcodec^=avc1][height<={h}]"
+            f"/bv*[ext=mp4][vcodec!*=av01][vcodec!*=av1][height<={h}]+ba[ext=m4a]"
+            f"/b[ext=mp4][vcodec!*=av01][vcodec!*=av1][height<={h}]"
             f"/bv*[vcodec^=vp09][height<={h}]+ba"
             f"/b[vcodec^=vp09][height<={h}]"
             f"/b[vcodec!*=av01][vcodec!*=av1][height<={h}]"
-            f"/b[height<={h}]"
         )
 
     def _format_fallbacks(self, audio_only, quality, url=""):
@@ -1647,14 +1654,15 @@ class PacheVideo(ctk.CTk):
         else:
             candidates = [
                 primary,
-                "bv*[vcodec^=avc1]+ba/b[vcodec^=avc1]",
-                "bv*[vcodec^=vp09]+ba/b[vcodec^=vp09]",
+                "bv*[vcodec^=avc1]+ba[ext=m4a]/b[vcodec^=avc1]",
+                "bv*[ext=mp4][vcodec!*=av01][vcodec!*=av1]+ba[ext=m4a]",
                 "b[ext=mp4][vcodec!*=av01][vcodec!*=av1]/b[vcodec!*=av01][vcodec!*=av1]",
-                None,
+                "bv*[vcodec^=vp09]+ba/b[vcodec^=vp09]",
+                "worst[ext=mp4][vcodec!*=av01][vcodec!*=av1]/worst[vcodec!*=av01][vcodec!*=av1]",
             ]
         unique = []
         for fmt in candidates:
-            if fmt and fmt not in unique:
+            if fmt not in unique:
                 unique.append(fmt)
         return unique
 
@@ -1666,7 +1674,7 @@ class PacheVideo(ctk.CTk):
         if self._is_youtube_solver_error(lower):
             return RuntimeError("Falta el solver de YouTube. Ejecuta: python -m pip install -r requirements.txt")
         if "requested format is not available" in lower or "invalid format" in lower:
-            return RuntimeError("No hay formato compatible para este video. Prueba Maxima calidad o desactiva MP4 en Salida video.")
+            return RuntimeError("No hay formato compatible sin AV1 para este video. Prueba Maxima calidad, usa cookies si pide login, o actualiza yt-dlp desde Herramientas.")
         if "timed out" in lower or "timeout" in lower:
             return RuntimeError("La conexion se corto por timeout. Reintenta; la descarga parcial deberia continuar.")
         if ".part" in lower or "incompleta" in lower:
