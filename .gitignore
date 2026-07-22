@@ -10,6 +10,8 @@ installer_output/
 
 ffmpeg
 ffmpeg.exe
+cookies.txt
+*cookies*.txt
 
 .venv/
 .venv-macos/

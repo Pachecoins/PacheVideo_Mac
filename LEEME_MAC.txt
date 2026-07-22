@@ -83,3 +83,5 @@ Notas de compatibilidad
 - Las notificaciones usan osascript en macOS.
 - El boton de actualizar usa Terminal en macOS y PowerShell en Windows.
 - Las descargas se guardan en ~/.pachevideo/downloads.json.
+- Si importas cookies.txt, se copia a ~/.pachevideo/cookies.txt.
+  Ese archivo es privado: no se sube a GitHub ni se mete en instaladores.

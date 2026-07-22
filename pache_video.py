@@ -11,6 +11,7 @@ from io import BytesIO
 import subprocess
 import re
 import time
+import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 try:
@@ -187,8 +188,9 @@ class PacheVideo(ctk.CTk):
         self._audio_folder = os.path.join(home, "Downloads", "MediaHuman", "Music")
         self._video_folder = os.path.join(home, "Downloads", "MediaHuman", "Video")
         self._temp_folder = ""
-        self._cookies_file = ""
         self._state_dir = os.path.join(home, ".pachevideo")
+        self._cookies_store = os.path.join(self._state_dir, "cookies.txt")
+        self._cookies_file = self._cookies_store if os.path.isfile(self._cookies_store) else ""
         self._downloads_store = os.path.join(self._state_dir, "downloads.json")
         self._downloads_records = self._load_download_records()
         self._queue_cards = {}
@@ -774,7 +776,8 @@ class PacheVideo(ctk.CTk):
         row = self._form_row(parent, "Archivo cookies.txt:")
         self._cookies_entry = ctk.CTkEntry(row, height=34, fg_color=INPUT_BG, border_color="#dddddd", state="readonly")
         self._cookies_entry.pack(side="left", fill="x", expand=True)
-        ctk.CTkButton(row, text="Seleccionar", width=110, height=34, fg_color=INPUT_BG, border_width=1,
+        self._refresh_cookies_entry()
+        ctk.CTkButton(row, text="Importar", width=110, height=34, fg_color=INPUT_BG, border_width=1,
                       border_color="#cfcfd3", text_color=TEXT, hover_color="#f2f2f2",
                       command=self._browse_cookies).pack(side="left", padx=8)
         ctk.CTkButton(row, text="Limpiar", width=82, height=34, fg_color=INPUT_BG, border_width=1,
@@ -787,7 +790,7 @@ class PacheVideo(ctk.CTk):
                 hover_color="#ead8ff", text_color=PURPLE,
                 command=lambda b=browser: self._use_browser_cookies(b),
             ).pack(side="left", padx=(0, 8))
-        ctk.CTkLabel(parent, text="Usa cookies si el sitio solicita login, edad o permisos. Cerrar el navegador mejora la lectura directa.",
+        ctk.CTkLabel(parent, text="Usa cookies si el sitio solicita login, edad o permisos. Importar copia cookies.txt a una carpeta privada local; no se incluye en el instalador.",
                      text_color=TEXT_MUTED, font=ctk.CTkFont(size=12), wraplength=760,
                      justify="left").pack(anchor="w", padx=18, pady=18)
 
@@ -976,23 +979,38 @@ class PacheVideo(ctk.CTk):
         path = filedialog.askopenfilename(title="Seleccionar cookies.txt",
                                           filetypes=[("Text files", "*.txt"), ("All files", "*.*")])
         if path:
-            self._cookies_file = path
-            if hasattr(self, "_cookies_entry"):
-                self._cookies_entry.configure(state="normal")
-                self._cookies_entry.delete(0, "end")
-                self._cookies_entry.insert(0, path)
-                self._cookies_entry.configure(state="readonly")
+            try:
+                os.makedirs(self._state_dir, exist_ok=True)
+                shutil.copy2(path, self._cookies_store)
+                self._cookies_file = self._cookies_store
+                self.pref_browser.set("Ninguno")
+                self._refresh_cookies_entry()
+                self._set_status("cookies.txt importado localmente. No se incluye en el instalador.", SUCCESS)
+            except Exception as e:
+                self._set_status(f"No pude importar cookies.txt: {str(e)[:90]}", ERROR)
 
     def _clear_cookies(self):
         self._cookies_file = ""
+        try:
+            if os.path.isfile(self._cookies_store):
+                os.remove(self._cookies_store)
+        except Exception:
+            pass
+        self._refresh_cookies_entry()
+
+    def _refresh_cookies_entry(self):
         if hasattr(self, "_cookies_entry"):
             self._cookies_entry.configure(state="normal")
             self._cookies_entry.delete(0, "end")
+            if self._cookies_file:
+                label = "cookies.txt importado localmente" if self._cookies_file == self._cookies_store else self._cookies_file
+                self._cookies_entry.insert(0, label)
             self._cookies_entry.configure(state="readonly")
 
     def _use_browser_cookies(self, browser):
         self.pref_browser.set(browser)
         self._cookies_file = ""
+        self._refresh_cookies_entry()
         if hasattr(self, "_cookies_entry"):
             self._cookies_entry.configure(state="normal")
             self._cookies_entry.delete(0, "end")
