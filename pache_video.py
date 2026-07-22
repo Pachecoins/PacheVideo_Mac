@@ -1585,9 +1585,14 @@ class PacheVideo(ctk.CTk):
 
         last_error = None
         fallback_formats = self._format_fallbacks(audio_only, quality, url)
+        rescue_transcode = False
         for attempt, attempt_format in enumerate(fallback_formats, start=1):
             attempt_opts = dict(ydl_opts)
-            if attempt_format:
+            force_h264_after_download = attempt_format == "__best_then_h264__"
+            if force_h264_after_download:
+                attempt_opts["format"] = "bv*+ba/b"
+                attempt_opts["merge_output_format"] = "mp4"
+            elif attempt_format:
                 attempt_opts["format"] = attempt_format
             else:
                 attempt_opts.pop("format", None)
@@ -1604,6 +1609,7 @@ class PacheVideo(ctk.CTk):
                     self.after(0, self._update_queue_item, item_key, f"Descargando: {short}", 0.05, TEXT, None, None, title, thumbnail_url)
                     self.after(0, self._set_status, f"Descargando {index}/{total}: {short}", TEXT_MUTED)
                     ydl.download([url])
+                rescue_transcode = force_h264_after_download
                 break
             except Exception as e:
                 last_error = e
@@ -1620,6 +1626,9 @@ class PacheVideo(ctk.CTk):
         expected_file = self._resolve_downloaded_file(output_folder, title, ext, downloaded_path["value"])
         if not expected_file or expected_file.lower().endswith(".part") or not os.path.exists(expected_file):
             raise RuntimeError("La descarga quedo incompleta (.part). Reintenta para continuar desde el parcial.")
+        if rescue_transcode and not audio_only:
+            self.after(0, self._update_queue_item, item_key, "Convirtiendo a MP4/H.264", 0.98, PURPLE)
+            expected_file = self._transcode_to_h264(expected_file)
         filesize = self._filesize(expected_file)
         return {
             "title": title,
@@ -1677,6 +1686,7 @@ class PacheVideo(ctk.CTk):
                 "b[ext=mp4][vcodec!*=av01][vcodec!*=av1]/b[vcodec!*=av01][vcodec!*=av1]",
                 "bv*[vcodec^=vp09]+ba/b[vcodec^=vp09]",
                 "worst[ext=mp4][vcodec!*=av01][vcodec!*=av1]/worst[vcodec!*=av01][vcodec!*=av1]",
+                "__best_then_h264__",
             ]
         unique = []
         for fmt in candidates:
@@ -1852,6 +1862,48 @@ class PacheVideo(ctk.CTk):
         if size > 1048576:
             return f"{size / 1048576:.1f} MB"
         return f"{size / 1024:.0f} KB"
+
+    def _transcode_to_h264(self, path):
+        if not FFMPEG_PATH:
+            raise RuntimeError("FFmpeg no esta disponible para convertir a H.264.")
+        if not path or not os.path.exists(path):
+            raise RuntimeError("No encontre el archivo descargado para convertir a H.264.")
+
+        root, _ext = os.path.splitext(path)
+        output = root + "_H264.mp4"
+        suffix = 1
+        while os.path.exists(output):
+            output = f"{root}_H264_{suffix}.mp4"
+            suffix += 1
+
+        cmd = [
+            FFMPEG_PATH,
+            "-y",
+            "-i", path,
+            "-map", "0:v:0",
+            "-map", "0:a?",
+            "-c:v", "libx264",
+            "-preset", "veryfast",
+            "-crf", "20",
+            "-pix_fmt", "yuv420p",
+            "-c:a", "aac",
+            "-b:a", "192k",
+            "-movflags", "+faststart",
+            output,
+        ]
+        try:
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception as e:
+            raise RuntimeError(f"No pude convertir a H.264: {e}")
+
+        if not os.path.exists(output):
+            raise RuntimeError("La conversion a H.264 no genero archivo final.")
+        try:
+            if os.path.abspath(path) != os.path.abspath(output):
+                os.remove(path)
+        except Exception:
+            pass
+        return output
 
     def _resolve_downloaded_file(self, output_folder, title, ext, hook_path=""):
         candidates = []
