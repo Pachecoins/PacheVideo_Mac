@@ -24,6 +24,18 @@ if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! "$PYTHON_BIN" - <<'PY' >/dev/null 2>&1
+import sys
+raise SystemExit(0 if sys.version_info >= (3, 10) else 1)
+PY
+then
+  echo "Python 3.10+ es requerido. Detectado: $("$PYTHON_BIN" --version)"
+  echo "Instala Python moderno con Homebrew:"
+  echo "  brew install python"
+  echo "o ejecuta install_mac.sh, que intenta resolverlo automaticamente."
+  exit 1
+fi
+
 echo "[1/6] Python:"
 "$PYTHON_BIN" --version
 

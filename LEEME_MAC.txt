@@ -21,6 +21,11 @@ Requisitos
 1. macOS con Python 3.11+:
    brew install python
 
+   Nota: el Python incluido por Apple puede ser 3.9 y no alcanza para
+   yt-dlp actual. El instalador install_mac.sh intenta usar python3.12,
+   python3.11 o python3.10, y si no encuentra ninguno intenta instalar
+   Python moderno con Homebrew.
+
 2. Xcode Command Line Tools:
    xcode-select --install
 

@@ -29,11 +29,47 @@ if ! command -v git >/dev/null 2>&1; then
   exit 1
 fi
 
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "No se encontro python3."
-  echo "Instala Python 3.11+ desde https://www.python.org/downloads/macos/ o con Homebrew: brew install python"
+find_modern_python() {
+  for candidate in python3.12 python3.11 python3.10 python3; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+      if "$candidate" - <<'PY' >/dev/null 2>&1
+import sys
+raise SystemExit(0 if sys.version_info >= (3, 10) else 1)
+PY
+      then
+        command -v "$candidate"
+        return 0
+      fi
+    fi
+  done
+  return 1
+}
+
+PYTHON_BIN="$(find_modern_python || true)"
+
+if [[ -z "$PYTHON_BIN" ]]; then
+  echo "Python 3.10+ no esta instalado. El Python de Apple suele ser 3.9 y ya no alcanza para yt-dlp actual."
+  if command -v brew >/dev/null 2>&1; then
+    echo "Instalando Python moderno con Homebrew..."
+    brew install python
+    PYTHON_BIN="$(find_modern_python || true)"
+  else
+    echo "No se encontro Homebrew."
+    echo "Instala Homebrew y vuelve a ejecutar el comando:"
+    echo '  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+    echo ""
+    echo "Luego ejecuta otra vez el instalador de PacheVideo."
+    open "https://brew.sh" >/dev/null 2>&1 || true
+    exit 1
+  fi
+fi
+
+if [[ -z "$PYTHON_BIN" ]]; then
+  echo "No pude activar Python 3.10+. Instala Python 3.11+ y vuelve a ejecutar el comando."
   exit 1
 fi
+
+echo "Python seleccionado: $("$PYTHON_BIN" --version)"
 
 if [[ -d "$WORK_DIR/.git" ]]; then
   echo "[1/4] Actualizando repo en $WORK_DIR..."
@@ -47,7 +83,7 @@ fi
 cd "$WORK_DIR"
 
 echo "[2/4] Construyendo app macOS..."
-bash build.sh
+PYTHON_BIN="$PYTHON_BIN" bash build.sh
 
 echo "[3/4] Instalando app en $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
