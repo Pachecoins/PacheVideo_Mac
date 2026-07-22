@@ -1552,10 +1552,8 @@ class PacheVideo(ctk.CTk):
             "http_chunk_size": 10 * 1024 * 1024,
             "nopart": False,
             "windowsfilenames": True,
-            "format_sort": ["vcodec:avc1:h264", "vcodec:vp9", "res", "br"],
+            "format_sort": ["vcodec:avc1:h264", "vcodec:vp9:vp09", "res", "br"],
         }
-        if "youtube.com" in url or "youtu.be" in url:
-            ydl_opts["extractor_args"] = {"youtube": {"player_client": ["web"]}}
 
         if fmt:
             ydl_opts["format"] = fmt
@@ -1655,6 +1653,7 @@ class PacheVideo(ctk.CTk):
                 "bv*[vcodec^=avc1]+ba[ext=m4a]/b[vcodec^=avc1]"
                 "/bv*[ext=mp4][vcodec!*=av01][vcodec!*=av1]+ba[ext=m4a]"
                 "/b[ext=mp4][vcodec!*=av01][vcodec!*=av1]"
+                "/bv*[vcodec^=vp9]+ba/b[vcodec^=vp9]"
                 "/bv*[vcodec^=vp09]+ba/b[vcodec^=vp09]"
                 "/b[vcodec!*=av01][vcodec!*=av1]"
             )
@@ -1664,6 +1663,8 @@ class PacheVideo(ctk.CTk):
             f"/b[vcodec^=avc1][height<={h}]"
             f"/bv*[ext=mp4][vcodec!*=av01][vcodec!*=av1][height<={h}]+ba[ext=m4a]"
             f"/b[ext=mp4][vcodec!*=av01][vcodec!*=av1][height<={h}]"
+            f"/bv*[vcodec^=vp9][height<={h}]+ba"
+            f"/b[vcodec^=vp9][height<={h}]"
             f"/bv*[vcodec^=vp09][height<={h}]+ba"
             f"/b[vcodec^=vp09][height<={h}]"
             f"/b[vcodec!*=av01][vcodec!*=av1][height<={h}]"
@@ -1684,6 +1685,7 @@ class PacheVideo(ctk.CTk):
                 "bv*[vcodec^=avc1]+ba[ext=m4a]/b[vcodec^=avc1]",
                 "bv*[ext=mp4][vcodec!*=av01][vcodec!*=av1]+ba[ext=m4a]",
                 "b[ext=mp4][vcodec!*=av01][vcodec!*=av1]/b[vcodec!*=av01][vcodec!*=av1]",
+                "bv*[vcodec^=vp9]+ba/b[vcodec^=vp9]",
                 "bv*[vcodec^=vp09]+ba/b[vcodec^=vp09]",
                 "worst[ext=mp4][vcodec!*=av01][vcodec!*=av1]/worst[vcodec!*=av01][vcodec!*=av1]",
                 "__best_then_h264__",
@@ -1702,7 +1704,7 @@ class PacheVideo(ctk.CTk):
         if self._is_youtube_solver_error(lower):
             return RuntimeError("Falta el solver de YouTube. Ejecuta: python -m pip install -r requirements.txt")
         if "requested format is not available" in lower or "invalid format" in lower:
-            return RuntimeError("No hay formato compatible sin AV1 para este video. Prueba Maxima calidad, usa cookies si pide login, o actualiza yt-dlp desde Herramientas.")
+            return RuntimeError("YouTube no entrego formatos de video para este intento. Actualiza yt-dlp/EJS, usa cookies si corresponde, y reintenta.")
         if "timed out" in lower or "timeout" in lower:
             return RuntimeError("La conexion se corto por timeout. Reintenta; la descarga parcial deberia continuar.")
         if ".part" in lower or "incompleta" in lower:
